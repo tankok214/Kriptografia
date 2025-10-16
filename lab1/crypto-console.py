@@ -11,8 +11,7 @@ import random
 
 from crypto import (encrypt_caesar, decrypt_caesar,
                     encrypt_vigenere, decrypt_vigenere,
-                    generate_private_key, create_public_key,
-                    encrypt_mh, decrypt_mh)
+                    encrypt_scytale, decrypt_scytale,)
 
 
 #############################
@@ -21,7 +20,7 @@ from crypto import (encrypt_caesar, decrypt_caesar,
 
 def get_tool():
     print("* Tool *")
-    return _get_selection("(C)aesar, (V)igenere or (M)erkle-Hellman? ", "CVM")
+    return _get_selection("(C)aesar, (V)igenere or (S)cytale? ", "CVS")
 
 
 def get_action():
@@ -102,6 +101,8 @@ def clean_caesar(text):
 def clean_vigenere(text):
     return ''.join(ch for ch in text.upper() if ch.isupper())
 
+def clean_scytale(text):
+    return text.upper()
 
 def run_caesar():
     action = get_action()
@@ -130,33 +131,18 @@ def run_vigenere():
 
     set_output(output)
 
+def run_scytale():
+    action=get_action()
+    encrypting = action == 'E'
+    data = clean_scytale(get_input(binary=False))
 
-def run_merkle_hellman():
-    action = get_action()
+    print("* Transform *")
+    circumference = input("Circumference? ")
+    circumference = int(circumference)
 
-    print("* Seed *")
-    seed = input("Set Seed [enter for random]: ")
-    import random
-    if not seed:
-        random.seed()
-    else:
-        random.seed(seed)
+    print("{}crypting {} using Scytale cipher with circumference {}...".format('En' if encrypting else 'De', data, circumference))
 
-    print("* Building private key...")
-
-    private_key = generate_private_key()
-    public_key = create_public_key(private_key)
-
-    if action == 'E':  # Encrypt
-        data = get_input(binary=True)
-        print("* Transform *")
-        chunks = encrypt_mh(data, public_key)
-        output = ' '.join(map(str, chunks))
-    else:  # Decrypt
-        data = get_input(binary=False)
-        chunks = [int(line.strip()) for line in data.split() if line.strip()]
-        print("* Transform *")
-        output = decrypt_mh(chunks, private_key)
+    output = (encrypt_scytale if encrypting else decrypt_scytale)(data, circumference)
 
     set_output(output)
 
@@ -175,7 +161,7 @@ def run_suite():
     commands = {
         'C': run_caesar,         # Caesar Cipher
         'V': run_vigenere,       # Vigenere Cipher
-        'M': run_merkle_hellman  # Merkle-Hellman Knapsack Cryptosystem
+        'S': run_scytale         # Scytale Cipher
     }
     commands[tool]()
 
