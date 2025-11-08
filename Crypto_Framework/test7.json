@@ -1,0 +1,10 @@
+{
+    "block_size" : 128,
+    "crypto_algorithm" : "aes",
+    "key" : "0x87FE89734ABCD12365deadbeef123456",
+    "mode" : "CBC",
+    "iv":   "0x56745786588587FF65deadbeef123456",
+    "padding" : "schn",
+    "input_file" : "input.bin",
+    "output_dir" : "output/"
+}
