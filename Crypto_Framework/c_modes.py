@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from algorithms import CipherAlgorithm
+from .algorithms import CipherAlgorithm
 
 class Mode(ABC):
     def __init__(self, alg: CipherAlgorithm, block_size: int, iv: Optional[bytes]=None):

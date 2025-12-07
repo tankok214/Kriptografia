@@ -1,9 +1,9 @@
 # file: block_framework.py
 import json
 import os
-from paddings import ZeroPadding, DESBitPadding, SchneierFergusonPadding
-from algorithms import CustomVigenere, AESAdapter
-from c_modes import ECBMode, CBCMode, CTRMode, OFBMode, CFBMode
+from .paddings import ZeroPadding, DESBitPadding, SchneierFergusonPadding
+from .algorithms import CustomVigenere, AESAdapter
+from .c_modes import ECBMode, CBCMode, CTRMode, OFBMode, CFBMode
 
 
 def load_config(path):
