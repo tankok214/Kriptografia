@@ -1,14 +1,3 @@
-"""
-Client - RSA-2048 and symmetric encryption client
-==================================================
-Client functions:
-1. RSA-2048 key pair generation
-2. Registration with KeyServer
-3. Querying public keys of other clients
-4. Key exchange with other clients (symmetric key + algorithm negotiation)
-5. Encrypted communication with other clients
-"""
-
 import socket
 import json
 import threading
@@ -20,7 +9,6 @@ from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Random import get_random_bytes
 import base64
 
-# Add parent directory to path to import Crypto_Framework
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from Crypto_Framework.algorithms import CustomVigenere, AESAdapter
@@ -42,30 +30,26 @@ class Client:
         self.host = host
         self.port = int(port) if port else int(client_id)
 
-        # RSA key pair generation
         self.log("Generating RSA-2048 key pair...")
         self.rsa_key = RSA.generate(2048)
         self.public_key = self.rsa_key.publickey()
         self.log("RSA key pair successfully generated")
 
-        # KeyServer configuration
         self.keyserver_host = 'localhost'
         self.keyserver_port = 8000
 
-        # Communication state
         self.running = False
         self.server_socket = None
 
-        # Key exchange state (Diffie-Hellman-like)
-        self.my_secret_key = None  # key1 or key2 (own secret)
-        self.peer_half_key = None  # Half-key sent by peer
+        self.my_secret_key = None
+        self.peer_half_key = None
 
         # Symmetric encryption (peer-to-peer)
-        self.symmetric_key = None  # commonkey = combine(key1, key2)
+        self.symmetric_key = None
         self.symmetric_algorithm = None
         self.symmetric_mode = None
         self.block_size = None
-        self.padding = None        # Supported algorithms
+        self.padding = None
         self.supported_algorithms = [
             "AES-128-CBC",
             "AES-128-ECB",
@@ -77,23 +61,18 @@ class Client:
         ]
 
     def log(self, message):
-        """Logging with timestamp"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] [Client-{self.client_id}] {message}")
 
     def register_to_keyserver(self):
-        """Registration with KeyServer"""
         self.log(f"Registering with KeyServer ({self.keyserver_host}:{self.keyserver_port})")
 
         try:
-            # Connect to KeyServer
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.keyserver_host, self.keyserver_port))
 
-            # Public key in PEM format
             public_key_pem = self.public_key.export_key().decode('utf-8')
 
-            # Registration request
             request = {
                 'action': 'register',
                 'client_id': self.client_id,
@@ -102,7 +81,6 @@ class Client:
 
             sock.send(json.dumps(request).encode('utf-8'))
 
-            # Receive response
             response_data = sock.recv(4096)
             response = json.loads(response_data.decode('utf-8'))
 
@@ -131,11 +109,9 @@ class Client:
         self.log(f"Querying public key: {target_client_id}")
 
         try:
-            # Connect to KeyServer
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.keyserver_host, self.keyserver_port))
 
-            # Query request
             request = {
                 'action': 'query',
                 'client_id': target_client_id
@@ -143,7 +119,6 @@ class Client:
 
             sock.send(json.dumps(request).encode('utf-8'))
 
-            # Receive response
             response_data = sock.recv(16384)
             response = json.loads(response_data.decode('utf-8'))
 
@@ -173,7 +148,6 @@ class Client:
             self.running = True
             self.log(f"Server mode active: {self.host}:{self.port}")
 
-            # Start server thread
             server_thread = threading.Thread(target=self.accept_connections)
             server_thread.daemon = True
             server_thread.start()
@@ -188,7 +162,6 @@ class Client:
                 client_socket, address = self.server_socket.accept()
                 self.log(f"Incoming connection: {address}")
 
-                # Handle each connection in a separate thread
                 thread = threading.Thread(target=self.handle_incoming, args=(client_socket, address))
                 thread.daemon = True
                 thread.start()
@@ -228,16 +201,6 @@ class Client:
 
     def initiate_key_exchange(self, target_host, target_port, target_client_id):
         """
-        Initiate key exchange with another client (Diffie-Hellman-like protocol)
-
-        According to diagram:
-        1. Query peer's public key (getPublicKey)
-        2. Generate a secret half-key (key1)
-        3. Send it encrypted with RSA (sendHalfSecret)
-        4. Receive peer's half-key (key2) encrypted with RSA
-        5. Combine the two half-keys into a common key (commonkey)
-        6. Initialize block cipher (initBlockCipher)
-
         Args:
             target_host: Target client address
             target_port: Target client port
@@ -325,7 +288,6 @@ class Client:
         if not self.my_secret_key or not self.peer_half_key:
             raise ValueError("Both half-keys are required to generate common key")
 
-        # XOR combination of the two half-keys
         common_key = bytes(a ^ b for a, b in zip(self.my_secret_key, self.peer_half_key))
         self.symmetric_key = common_key
         self.log(f"Common key generated (commonkey): {common_key.hex()}")
@@ -375,7 +337,7 @@ class Client:
             self.log(f"Common algorithm: {common_algorithm}")
 
             # 4. Generate our own secret half-key (key2 = generateRandomSecret)
-            self.my_secret_key = get_random_bytes(16)  # 128 bit
+            self.my_secret_key = get_random_bytes(16)
             self.log(f"Own secret half-key generated (key2): {self.my_secret_key.hex()}")
 
             # 5. Query sender's public key (getPublicKey(idClient1))
@@ -426,8 +388,6 @@ class Client:
             key: Symmetric key (bytes) - already set as self.symmetric_key
             algorithm_spec: Algorithm specification (e.g. "AES-128-CBC")
         """
-        # Key is already set by generate_common_key()
-        # just verify
         if self.symmetric_key is None:
             self.symmetric_key = key
 
@@ -435,10 +395,8 @@ class Client:
         alg_name = parts[0]
         mode_name = parts[-1]
 
-        # Set block size
-        self.block_size = 16  # 128 bit
+        self.block_size = 16
 
-        # Set algorithm
         if alg_name == 'AES':
             self.symmetric_algorithm = AESAdapter(self.symmetric_key, self.block_size)
         elif alg_name == 'CustomVigenere':
@@ -446,10 +404,8 @@ class Client:
         else:
             raise ValueError(f"Unknown algorithm: {alg_name}")
 
-        # Generate IV
         iv = get_random_bytes(self.block_size)
 
-        # Set mode
         if mode_name == 'ECB':
             self.symmetric_mode = ECBMode(self.symmetric_algorithm, self.block_size, iv)
         elif mode_name == 'CBC':
@@ -463,7 +419,6 @@ class Client:
         else:
             raise ValueError(f"Unknown mode: {mode_name}")
 
-        # Set padding
         self.padding = SchneierFergusonPadding()
 
         self.log(f"Symmetric encryption configured: {algorithm_spec}")
@@ -551,20 +506,17 @@ class Client:
             ciphertext_b64 = message['ciphertext']
             ciphertext = base64.b64decode(ciphertext_b64)
 
-            # Get IV from message
             iv_b64 = message.get('iv')
             if iv_b64:
                 iv = base64.b64decode(iv_b64)
             else:
                 iv = get_random_bytes(self.block_size)
 
-            # New algorithm object for decryption
             if isinstance(self.symmetric_algorithm, AESAdapter):
                 decrypt_algorithm = AESAdapter(self.symmetric_key, self.block_size)
             else:
                 decrypt_algorithm = CustomVigenere(self.symmetric_key, self.block_size)
 
-            # New mode object for decryption with the correct IV
             if isinstance(self.symmetric_mode, ECBMode):
                 decrypt_mode = ECBMode(decrypt_algorithm, self.block_size, iv)
             elif isinstance(self.symmetric_mode, CBCMode):

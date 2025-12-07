@@ -1,11 +1,4 @@
 """
-KeyServer - RSA Public Key Service
-===================================
-The KeyServer is a central key registry that:
-1. Accepts client registrations (client_id, public_key)
-2. Serves public key queries (based on client_id)
-3. Logs all activities
-
 Protocol:
 - Registration: {"action": "register", "client_id": "...", "public_key": "..."}
 - Query: {"action": "query", "client_id": "..."}
