@@ -1,0 +1,36 @@
+# Privát kulcsok - SOHA ne töltsd fel git-re!
+*_key.pem
+*.key
+*.pem.key
+
+# Keystores és tanúsítvány tárolók - érzékeny adatok
+*.jks
+*.p12
+*.keystore
+*.truststore
+*.pfx
+
+# Köztes/ideiglenes fájlok
+*.csr
+*.srl
+*.der
+
+# HTML kimenet
+bnr_homepage.html
+*.html
+
+# Java fordított fájlok
+*.class
+
+# IDE fájlok
+.vscode/
+.idea/
+*.iml
+
+# Backup fájlok
+*.bak
+*~
+
+# Windows rendszer fájlok
+Thumbs.db
+desktop.ini
